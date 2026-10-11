@@ -1,14 +1,5 @@
-#!/usr/bin/env python3
-"""Build the AWS Lambda deployment zip WITHOUT Docker.
 
-    python scripts/build_lambda_zip.py        ->  build/airwatch-lambda.zip
 
-How it works: pip downloads Linux (manylinux x86_64, CPython 3.12) wheels no matter which OS you are on,
-the bundle is trimmed to fit Lambda's 250 MB unzipped limit, and our src/*.py is added at the zip root.
-boto3 is NOT bundled: the Lambda Python runtime already provides it.
-
-Lambda settings that match this zip: runtime Python 3.12, architecture x86_64, handler lambda_handler.handler
-"""
 import shutil
 import subprocess
 import sys
