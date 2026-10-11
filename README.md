@@ -1,105 +1,413 @@
 # AirWatch Delhi
 
-**A 72-hour PM2.5 forecast for Delhi that also answers: where is the pollution coming from, who will be exposed, and what should people and authorities do?**
+### From air-quality data to environmental action.
 
-Built for the [Environmental Hacks](https://www.wemakedevs.org/aws/env) hackathon (WeMakeDevs × AWS, Bharat Builds Tour, Oct 2026).
+> **Track:** Air
+> **Built with:** AWS Lambda · Amazon S3 · Amazon EventBridge · Python · Leaflet · NASA FIRMS · Open-Meteo/CAMS · OpenAQ
 
-| | |
-|---|---|
-| Live demo | **TODO: paste your S3 website URL** |
-| Demo video | **TODO: paste your YouTube link** |
-| Team | **TODO: names** |
+**AirWatch Delhi** is an environmental decision-support platform that goes beyond telling people *how bad the air is*.
 
-**TODO: add 2–3 screenshots of the real-data dashboard here** (`docs/screenshots/*.png`).
+It combines air-quality measurements, weather conditions and satellite fire detections to help answer four more useful questions:
 
-## What it does
+**Where is the pollution worst? → What may be contributing to it? → What happens next? → What can we do about it?**
 
-1. **Forecasts** PM2.5 for 12 Delhi stations out to 72 hours (gradient-boosted model per horizon, trained on station history + weather forecasts + an upwind stubble-fire index).
-2. **Attributes sources (indicative)**: biomass burning, traffic, dust, industry, other, from transparent rules on wind direction, upwind fire counts, NO₂ and the PM2.5/PM10 ratio, with the evidence shown.
-3. **Maps exposure**: interpolates the forecast onto a grid and weights by population ("people exposed" view, Now → +72 h).
-4. **Recommends actions** for citizens and for authorities, driven by the forecast and the dominant source.
-5. **Simulates what-ifs**: first-order estimate of how much a traffic / dust / industry intervention would lower the forecast peak.
+---
 
-## Architecture
+## The Problem
 
+Delhi already has plenty of AQI numbers.
+
+Knowing that the AQI is *"Severe"* is important, but that number alone does not tell citizens or decision-makers:
+
+* Which areas are experiencing the highest pollution?
+* How could PM2.5 change over the next few days?
+* What environmental signals may explain the pollution?
+* Which communities may experience the greatest exposure?
+* What interventions could potentially reduce that exposure?
+
+Most air-quality dashboards stop at **monitoring**.
+
+AirWatch Delhi is designed to move from:
+
+**Monitoring → Understanding → Forecasting → Action**
+
+---
+
+## Our Solution
+
+AirWatch Delhi brings multiple environmental signals into one interactive platform.
+
+It provides:
+
+### Hyperlocal Pollution Map
+
+Explore PM2.5 conditions across monitoring locations in Delhi instead of relying on one city-wide AQI number.
+
+###  72-Hour Forecast
+
+AirWatch uses historical pollution and meteorological conditions to estimate how PM2.5 could evolve over the next 72 hours.
+
+### Pollution Source Signals
+
+Weather, temporal patterns, pollution measurements and NASA FIRMS satellite fire detections are combined to estimate signals associated with potential pollution sources such as:
+
+* biomass burning
+* traffic
+* dust
+* industry
+* other sources
+
+These are **decision-support indicators**, not a replacement for chemical source-apportionment studies.
+
+### Exposure Intelligence
+
+AirWatch connects pollution concentrations with population information to communicate environmental risk in terms of **people and places**, not just pollutant measurements.
+
+### Citizen & Authority Recommendations
+
+Instead of stopping at *"air quality is poor,"* the platform translates environmental conditions into understandable actions for citizens and decision-makers.
+
+###  What-If Intervention Simulator
+
+Decision-makers can explore scenarios such as reducing:
+
+* traffic emissions
+* dust-generating activities
+* biomass-burning influence
+* industrial emissions
+
+AirWatch estimates how those changes could affect PM2.5 and exposure.
+
+The simulator is intended for **comparative decision support**, rather than as a full atmospheric chemistry or dispersion model.
+
+---
+
+# Built on AWS
+
+AWS powers the automated data-to-dashboard workflow behind AirWatch Delhi.
+
+```text
+      AIR-QUALITY DATA
+            +
+        WEATHER DATA
+            +
+ NASA FIRMS FIRE DETECTIONS
+            │
+            ▼
+     ┌──────────────┐
+     │  AWS Lambda  │
+     │              │
+     │ Data cleaning│
+     │ Forecasting  │
+     │ Attribution  │
+     │ Exposure     │
+     │ Simulation   │
+     └──────┬───────┘
+            │
+            ▼
+      ┌───────────┐
+      │ Amazon S3 │
+      │ data.json │
+      └─────┬─────┘
+            │
+            ▼
+     AIRWATCH DELHI
+        DASHBOARD
+
+
+ Amazon EventBridge
+        │
+        │ scheduled trigger
+        ▼
+     AWS Lambda
 ```
-Open-Meteo (weather + CAMS air quality) ┐
-OpenAQ ground sensors  (API key)        ├──► AWS Lambda (Python 3.12) ──► Amazon S3 ──► Dashboard
-NASA FIRMS fire detections (API key)    ┘     ▲  ingest → forecast →      data.json     (S3 static website,
-                                              │  attribute → exposure →                  Leaflet + OSM)
-                                  Amazon EventBridge (hourly)  recommend → simulate
+
+## AWS Services
+
+### AWS Lambda
+
+Runs the AirWatch environmental data pipeline without requiring a continuously running server.
+
+The pipeline collects the latest available environmental data, processes it and generates the data consumed by the dashboard.
+
+### Amazon S3
+
+Stores the generated AirWatch dataset (`data.json`) and can host the static web dashboard.
+
+### Amazon EventBridge
+
+Schedules the Lambda pipeline so environmental data and forecasts can be refreshed automatically.
+
+Together:
+
+**EventBridge → Lambda → S3 → AirWatch**
+
+turns AirWatch from a static visualization into an automatically updating environmental intelligence system.
+
+---
+
+# 🔄 How AirWatch Works
+
+```text
+OpenAQ ───────────────┐
+                      │
+Open-Meteo / CAMS ────┼──► Data Collection
+                      │
+NASA FIRMS ────────────┘
+                              │
+                              ▼
+                       Clean & Process
+                              │
+                    ┌─────────┴─────────┐
+                    │                   │
+                    ▼                   ▼
+             PM2.5 Forecast      Source Signals
+                    │                   │
+                    └─────────┬─────────┘
+                              ▼
+                       Exposure Model
+                              │
+                              ▼
+                      Recommendations
+                              │
+                              ▼
+                    What-If Simulator
+                              │
+                              ▼
+                       AirWatch UI
 ```
 
-### How AWS is used
-- **AWS Lambda** runs the whole pipeline (ingest, model training and inference, analysis) on every invocation.
-- **Amazon EventBridge** triggers it every hour.
-- **Amazon S3** stores the generated `data.json` and hosts the static dashboard.
+---
 
-## Quick start (local, no AWS needed)
+#  Environmental Data
+
+AirWatch combines multiple data sources because no single dataset explains urban air pollution.
+
+### NASA FIRMS
+
+Satellite-derived active-fire detections provide signals for regional biomass-burning activity.
+
+### OpenAQ
+
+Provides access to air-quality monitoring observations where available.
+
+### Open-Meteo / CAMS
+
+Provides meteorological and atmospheric information used by the forecasting and source-signal pipeline.
+
+Combining these datasets allows AirWatch to examine the relationship between **pollution + weather + fire activity + location + time**.
+
+---
+
+#  Who Is AirWatch For?
+
+## Citizens
+
+A resident should not need to understand atmospheric science to make sense of the air around them.
+
+AirWatch presents environmental information visually and translates technical measurements into understandable risk information and recommendations.
+
+## Decision-Makers
+
+Authorities can use the platform to identify high-risk locations, examine possible pollution-source signals, inspect upcoming conditions and compare potential interventions.
+
+---
+
+# Why AirWatch Is Different
+
+Traditional AQI dashboard:
+
+```text
+PM2.5 = 180 µg/m³
+        ↓
+     "Severe"
+```
+
+AirWatch:
+
+```text
+What is happening?
+        ↓
+Where is it happening?
+        ↓
+What may be contributing?
+        ↓
+What could happen next?
+        ↓
+Who could be exposed?
+        ↓
+What can we do?
+```
+
+AirWatch is therefore designed around **decisions**, not just measurements.
+
+---
+
+# Tech Stack
+
+| Layer             | Technology                        |
+| ----------------- | --------------------------------- |
+| Cloud             | AWS                               |
+| Compute           | AWS Lambda                        |
+| Storage / Hosting | Amazon S3                         |
+| Scheduling        | Amazon EventBridge                |
+| Data processing   | Python                            |
+| Data analysis     | Pandas / NumPy                    |
+| Forecasting       | Python-based forecasting pipeline |
+| Maps              | Leaflet                           |
+| Frontend          | HTML / CSS / JavaScript           |
+| Fire intelligence | NASA FIRMS                        |
+| Air quality       | OpenAQ / CAMS                     |
+| Weather           | Open-Meteo                        |
+
+---
+
+# Running Locally
+
+Clone the repository:
 
 ```bash
-python -m venv .venv && source .venv/bin/activate        # Windows: .venv\Scripts\activate
+git clone https://github.com/JadooX0/airwatch-delhi.git
+cd airwatch-delhi
+```
+
+Create a Python virtual environment:
+
+```bash
+python -m venv .venv
+```
+
+### Windows PowerShell
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+### macOS / Linux
+
+```bash
+source .venv/bin/activate
+```
+
+Install dependencies:
+
+```bash
 pip install -r requirements.txt
-cp .env.example .env                                     # optional: add your API keys
-python src/pipeline.py --mode synthetic --out dashboard/data.json   # offline demo data
-python src/pipeline.py --mode live --out dashboard/data.json        # real data (needs internet)
-python -m http.server 8000 --directory dashboard         # open http://localhost:8000
 ```
 
-`--mode synthetic` generates **made-up** data for development; the dashboard shows a banner whenever it is used.
+---
 
-### API keys (free, optional but strongly recommended)
-| Key | Where | Effect if missing |
-|---|---|---|
-| `OPENAQ_API_KEY` | openaq.org | Falls back to coarse CAMS model data; stations look nearly identical |
-| `FIRMS_MAP_KEY` | firms.modaps.eosdis.nasa.gov/api | No stubble-burning signal |
+# Environment Variables
 
-## Deploy to AWS (no Docker needed)
+Create a `.env` file using `.env.example` as the template.
 
-Use region `ap-south-1`. Everything below can be done in the AWS console.
+```env
+OPENAQ_API_KEY=your_key_here
+FIRMS_MAP_KEY=your_key_here
+```
 
-1. **S3 bucket**: create `airwatch-delhi-<unique>`. Under *Permissions* untick "Block all public access"; add this bucket policy (replace the bucket name); under *Properties → Static website hosting* enable it with index document `index.html`. Upload `dashboard/index.html`.
-   ```json
-   {"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":"*","Action":"s3:GetObject","Resource":"arn:aws:s3:::YOUR-BUCKET/*"}]}
-   ```
-2. **Build the Lambda package** (works on Windows/macOS/Linux; downloads Linux wheels, ~1 min):
-   ```bash
-   python scripts/build_lambda_zip.py        # → build/airwatch-lambda.zip (~63 MB)
-   ```
-   Upload that zip into your bucket (for example under `deploy/`). It is above the console's 50 MB direct-upload limit, so Lambda must pull it from S3.
-3. **Lambda function**: *Create function → Author from scratch*, runtime **Python 3.12**, architecture **x86_64**. Then *Code → Upload from → Amazon S3 location* and paste the zip's S3 URL. *Runtime settings → Edit → Handler* = `lambda_handler.handler`.
-   - *Configuration → General*: memory 3008 MB (or your account's maximum), timeout 5 min.
-   - *Environment variables*: `BUCKET` = your bucket, `OPENAQ_API_KEY`, `FIRMS_MAP_KEY`.
-   - *Permissions → execution role → add inline policy* allowing `s3:PutObject` on `arn:aws:s3:::YOUR-BUCKET/data.json`.
-   - Click **Test** once. `data.json` should appear in the bucket.
-4. **Schedule**: *Add trigger → EventBridge (CloudWatch Events) → new rule → Schedule expression* `rate(1 hour)`.
-5. Open the bucket's website endpoint (S3 → Properties → Static website hosting).
+**Never commit `.env` or API keys to GitHub.**
 
-## Data sources
-Open-Meteo (weather, CAMS air-quality model) · OpenAQ (ground sensors) · NASA FIRMS (fire detections) · OpenStreetMap tiles · Leaflet. Licences and credits: [CREDITS.md](CREDITS.md).
+---
 
-## Limitations (please read)
-- **Source attribution is a heuristic**, not chemical source apportionment. Shares are indicative; the evidence behind each is shown.
-- **The what-if simulator is a first-order scenario estimate** built from those shares and stated controllability assumptions (`src/config.py → CONTROLLABLE`). It is not a dispersion model.
-- **Station coordinates** are approximate and **the population surface is a placeholder** (smooth blobs, ~20 M people), not a census raster. **TODO: update this line if you replace either.**
-- **Forecast accuracy**: the dashboard's *About* tab shows hold-out error vs a "same as now" baseline. The model is trained on analysed weather but run on forecast weather, so 48–72 h skill is somewhat optimistic.
-- Advisory only. Follow official CPCB / CAQM orders.
+# Generate Live Data
 
-## Tests
+Run:
+
 ```bash
-python tests/mock_live_test.py     # exercises the live-data code path against mocked API responses (offline)
+python src/pipeline.py --mode live --out dashboard/data.json
 ```
 
-## Built with AI assistance
-The initial scaffold of the pipeline, dashboard and docs was written with Claude (Anthropic) during the hackathon. **TODO: edit this to describe what you changed or added yourself.** See [CREDITS.md](CREDITS.md).
+The pipeline collects available environmental information and generates the dataset consumed by the dashboard.
 
-## Project layout
-```
-src/            pipeline, ingest, forecast, attribution, exposure, recommend, simulate, synthetic, lambda_handler
-dashboard/      index.html (Leaflet UI); data.json is generated, not committed
-scripts/        build_lambda_zip.py (Docker-free Lambda package)
-tests/          mock_live_test.py
+---
+
+# 🖥️ Run the Dashboard
+
+```bash
+python -m http.server 8000 --directory dashboard
 ```
 
-## License
-MIT, see [LICENSE](LICENSE).
+Then visit:
+
+```text
+http://localhost:8000
+```
+
+---
+
+#  AWS Deployment
+
+The production workflow is:
+
+```text
+Amazon EventBridge
+        ↓
+    AWS Lambda
+        ↓
+Environmental pipeline
+        ↓
+     Amazon S3
+        ↓
+    data.json
+        ↓
+AirWatch Dashboard
+```
+
+A Lambda deployment package can be prepared using:
+
+```bash
+python scripts/build_lambda_zip.py
+```
+
+Configure the Lambda environment variables:
+
+```text
+OPENAQ_API_KEY
+FIRMS_MAP_KEY
+S3_BUCKET
+```
+
+The Lambda execution role should have permission to write the generated output to the project's S3 bucket.
+
+EventBridge can then trigger the function on a schedule.
+
+---
+
+# Scientific Scope & Limitations
+
+AirWatch is a **hackathon prototype and decision-support system**, not a regulatory air-quality or atmospheric-chemistry model.
+
+In particular:
+
+**Source attribution** represents indicative signals inferred from available environmental variables. Definitive pollution-source attribution normally requires techniques such as chemical speciation and validated atmospheric modelling.
+
+**What-if scenarios** are comparative estimates and should not be interpreted as guaranteed real-world reductions.
+
+**Forecast accuracy** depends on the quality and availability of input measurements and meteorological data.
+
+**Exposure estimates** depend on the resolution and reliability of the population data available to the system.
+
+These limitations are surfaced deliberately rather than presenting uncertain environmental estimates as ground truth.
+
+---
+
+# What's Next?
+
+With additional time and data, AirWatch could be extended with:
+
+* validated high-resolution population datasets
+* additional CPCB monitoring observations
+* satellite aerosol products
+* traffic-intensity datasets
+* higher-resolution meteorological modelling
+* calibrated ML forecasting
+* atmospheric dispersion modelling
+* uncertainty intervals
+* intervention-cost modelling
+* personalized low-exposure routing
+
+The long-term goal is to move from simply **observing pollution** toward helping communities make **better environmental decisions before exposure occurs**.
+
+---
+
