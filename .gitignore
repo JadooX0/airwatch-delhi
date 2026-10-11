@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+dashboard/data.json
+build/
+*.zip
+policy.json
+notes/
+.DS_Store
+
+env/
+venv/

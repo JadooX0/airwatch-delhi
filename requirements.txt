@@ -1,0 +1,5 @@
+# Local development. For AWS Lambda the pinned requirements-lambda.txt is used (scripts/build_lambda_zip.py).
+numpy>=1.26
+pandas>=2.1
+scikit-learn>=1.4
+requests>=2.31

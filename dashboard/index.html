@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AirWatch Delhi</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{--bg:#f6f5f2;--panel:#ffffff;--ink:#1d2127;--mute:#5d6672;--line:#e1ded8;--accent:#1f5fae;--warn:#fff4d6;--warnink:#6b4e00}
+@media (prefers-color-scheme:dark){:root{--bg:#14171b;--panel:#1c2026;--ink:#e8eaed;--mute:#9aa3ae;--line:#2c323a;--accent:#6aa7f0;--warn:#3a3112;--warnink:#f2d77a}}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{display:flex;gap:16px;align-items:baseline;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
+header b{font-size:17px;letter-spacing:.2px}
+header .tag{color:var(--mute);margin-left:10px;font-size:13px}
+#meta{color:var(--mute);font-size:12px;text-align:right}
+#banner{display:none;background:var(--warn);color:var(--warnink);padding:6px 16px;font-size:12.5px}
+main{display:grid;grid-template-columns:1fr 430px;height:calc(100vh - 46px)}
+#banner.on+main{height:calc(100vh - 46px - 30px)}
+.mapwrap{position:relative;min-height:320px}
+#map{position:absolute;inset:0}
+.ctl{position:absolute;z-index:500;left:12px;right:12px;bottom:12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 14px;display:flex;gap:18px;align-items:center;flex-wrap:wrap;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:transparent;color:var(--ink);padding:5px 11px;cursor:pointer;font:inherit}
+.seg button.on{background:var(--accent);color:#fff}
+.slider{flex:1;min-width:200px}
+.slider input{width:100%}
+.ticks{display:flex;justify-content:space-between;font-size:11.5px;color:var(--mute)}
+.legend{position:absolute;z-index:500;right:12px;top:12px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:11.5px}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.pin{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px;border:2px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.45);text-shadow:0 1px 1px rgba(0,0,0,.35)}
+.pin.sel{outline:3px solid var(--accent);outline-offset:1px}
+aside{background:var(--panel);border-left:1px solid var(--line);overflow:auto;display:flex;flex-direction:column}
+nav{display:flex;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);z-index:2}
+nav button{flex:1;border:0;background:transparent;color:var(--mute);padding:11px 4px;cursor:pointer;font:inherit;border-bottom:2px solid transparent}
+nav button.on{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+.tab{padding:14px 16px 24px;display:none}
+.tab.on{display:block}
+h3{margin:18px 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:var(--mute)}
+h2{margin:0;font-size:19px}
+.chip{display:inline-block;padding:1px 8px;border-radius:99px;font-size:11.5px;border:1px solid var(--line);color:var(--mute);margin-left:6px;vertical-align:2px}
+.big{display:flex;gap:18px;align-items:flex-end;margin:10px 0 4px}
+.big .n{font-size:34px;font-weight:700;line-height:1}
+.big .u{color:var(--mute);font-size:12px}
+.cat{font-weight:600;padding:2px 9px;border-radius:6px;color:#fff;font-size:12px}
+.bars .row{display:grid;grid-template-columns:150px 1fr 44px;gap:8px;align-items:center;margin:5px 0;font-size:12.5px}
+.bar{height:10px;border-radius:5px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%}
+ul{margin:6px 0;padding-left:18px}li{margin:4px 0}
+.note{color:var(--mute);font-size:12px}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th,td{padding:5px 6px;border-bottom:1px solid var(--line);text-align:right}
+th:first-child,td:first-child{text-align:left}
+button.pill{border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:99px;padding:4px 11px;cursor:pointer;font:inherit;margin:2px 4px 2px 0}
+button.pill:hover{border-color:var(--accent)}
+.sl{display:grid;grid-template-columns:150px 1fr 46px;gap:8px;align-items:center;margin:7px 0;font-size:12.5px}
+.result{margin-top:12px;border:1px solid var(--line);border-radius:10px;padding:12px}
+.result .n{font-size:22px;font-weight:700}
+select{font:inherit;padding:4px 6px;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:6px}
+svg text{fill:var(--mute);font-size:10px}
+@media (max-width:900px){main{grid-template-columns:1fr;height:auto}.mapwrap{height:62vh}aside{border-left:0}}
+</style>
+</head>
+<body>
+<header>
+  <div><b>AirWatch Delhi</b><span class="tag">72-hour PM2.5 forecast · exposure · what to do</span></div>
+  <div id="meta">loading…</div>
+</header>
+<div id="banner"></div>
+<main>
+  <section class="mapwrap">
+    <div id="map"></div>
+    <div class="legend" id="legend"></div>
+    <div class="ctl">
+      <div class="seg" id="modeSeg"><button data-m="pm" class="on">PM2.5</button><button data-m="exp">People exposed</button></div>
+      <div class="slider">
+        <input id="hour" type="range" min="0" max="3" step="1" value="0" aria-label="Forecast time">
+        <div class="ticks"><span>Now</span><span>+24 h</span><span>+48 h</span><span>+72 h</span></div>
+      </div>
+      <div id="hourLabel" class="note"></div>
+    </div>
+  </section>
+  <aside>
+    <nav id="nav">
+      <button data-t="station" class="on">Sources &amp; forecast</button><button data-t="act">What to do</button>
+      <button data-t="sim">What-if</button><button data-t="about">About</button>
+    </nav>
+    <div class="tab on" id="tab-station"></div>
+    <div class="tab" id="tab-act"></div>
+    <div class="tab" id="tab-sim"></div>
+    <div class="tab" id="tab-about"></div>
+  </aside>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const CATS=[["Good","#2e9e5b"],["Satisfactory","#8fbf3a"],["Moderate","#e8b923"],["Poor","#ee8a1f"],["Very Poor","#d83a2e"],["Severe","#8a2160"]];
+const SRC_COL={biomass_burning:"#b5532f",traffic:"#3b6ea5",dust:"#b99a3e",industry:"#6b5b95",other:"#8a8f98"};
+const catIdx=v=>v<=30?0:v<=60?1:v<=90?2:v<=120?3:v<=250?4:5;
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const HOURS=[0,24,48,72];
+let D,map,gridGroup,pins={};
+const state={hourIdx:0,mode:"pm",sel:"city",cuts:{},simTarget:"city"};
+
+function valAt(arr,now,h){if(h===0)return now;const s=arr.slice(Math.max(0,h-4),Math.min(72,h+2));return s.reduce((a,b)=>a+b,0)/s.length}
+function catChip(v){const c=CATS[catIdx(v)];return `<span class="cat" style="background:${c[1]}">${c[0]}</span>`}
+function lab(s){return s.replace(" "," ")}
+
+fetch("data.json",{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()}).then(init).catch(e=>{
+  $("#meta").textContent="could not load data.json";
+  $("#tab-station").innerHTML=`<p><b>Could not load data.json.</b></p><p class="note">Serve this folder over HTTP (browsers block fetch from file://):<br><code>python -m http.server 8000 --directory dashboard</code><br>then open http://localhost:8000. (${esc(e.message||e)})</p>`;
+  document.querySelectorAll(".tab")[0].classList.add("on");
+});
+
+function init(d){
+  D=d;
+  $("#meta").innerHTML=`${esc(D.meta.mode)} mode · data as of ${esc(D.meta.now_local)} IST`;
+  if(D.meta.notes&&D.meta.notes.length){const b=$("#banner");b.textContent=D.meta.notes.join("  ·  ");b.style.display="block";b.classList.add("on")}
+  map=L.map("map",{zoomControl:true}).setView([28.655,77.18],11);
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:17,attribution:"© OpenStreetMap contributors"}).addTo(map);
+  gridGroup=L.layerGroup().addTo(map);
+  D.stations.forEach(s=>{
+    const m=L.marker([s.lat,s.lon],{icon:L.divIcon({className:"",html:"",iconSize:[34,34]})}).addTo(map);
+    m.on("click",()=>select(s.id));m.bindTooltip(s.name,{direction:"top",offset:[0,-16]});pins[s.id]=m;
+  });
+  $("#legend").innerHTML=CATS.map(c=>`<div><i style="background:${c[1]}"></i>${c[0]}</div>`).join("");
+  $("#hour").oninput=e=>{state.hourIdx=+e.target.value;refreshMap()};
+  $("#modeSeg").onclick=e=>{const b=e.target.closest("button");if(!b)return;state.mode=b.dataset.m;
+    [...$("#modeSeg").children].forEach(x=>x.classList.toggle("on",x===b));refreshMap()};
+  $("#nav").onclick=e=>{const b=e.target.closest("button");if(b)tab(b.dataset.t)};
+  refreshMap();renderStation();renderAct();renderSim();renderAbout();
+}
+function tab(t){[...$("#nav").children].forEach(b=>b.classList.toggle("on",b.dataset.t===t));
+  document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x.id==="tab-"+t))}
+function select(id){state.sel=id;state.simTarget=id;renderStation();renderSim();refreshPins();tab("station")}
+
+function refreshMap(){
+  const h=HOURS[state.hourIdx];
+  $("#hourLabel").textContent=h===0?"Current conditions":`Forecast for ~${h} h from now`;
+  drawGrid();refreshPins();
+}
+function drawGrid(){
+  gridGroup.clearLayers();
+  const g=D.grid,nn=g.lons.length,hr=String(HOURS[state.hourIdx]);
+  const dlat=(g.lats[1]-g.lats[0])/2*1.04,dlon=(g.lons[1]-g.lons[0])/2*1.04,pm=g.pm[hr]; // 4% overlap hides seams
+  let mx=1;for(const h in g.pm)for(let k=0;k<g.pop.length;k++)mx=Math.max(mx,g.pm[h][k]*g.pop[k]);
+  for(let i=0;i<g.lats.length;i++)for(let j=0;j<nn;j++){
+    const k=i*nn+j;let col,op;
+    if(state.mode==="pm"){col=CATS[catIdx(pm[k])][1];op=.4}
+    else{col="#8a2160";op=.06+.74*Math.sqrt(pm[k]*g.pop[k]/mx)}
+    L.rectangle([[g.lats[i]-dlat,g.lons[j]-dlon],[g.lats[i]+dlat,g.lons[j]+dlon]],{stroke:false,fillColor:col,fillOpacity:op,interactive:false}).addTo(gridGroup);
+  }
+}
+function refreshPins(){
+  const h=HOURS[state.hourIdx];
+  D.stations.forEach(s=>{
+    const v=valAt(s.forecast,s.pm25_now,h);
+    pins[s.id].setIcon(L.divIcon({className:"",iconSize:[34,34],iconAnchor:[17,17],
+      html:`<div class="pin ${state.sel===s.id?"sel":""}" style="background:${CATS[catIdx(v)][1]}">${Math.round(v)}</div>`}));
+  });
+}
+
+function getSel(id){
+  if(id==="city"){const c=D.city;return{name:"Delhi (population-weighted)",kind:"city",now:c.pm25_now,peak:c.peak,forecast:c.forecast,hist:[],base:null,shares:c.shares,evidence:[],src:null}}
+  const s=D.stations.find(x=>x.id===id);
+  return{name:s.name,kind:s.kind,now:s.pm25_now,peak:s.peak,forecast:s.forecast,hist:s.history_24h,base:s.cams_baseline,shares:s.attribution.shares,evidence:s.attribution.evidence,src:s.source}
+}
+
+function spark(S){
+  const W=380,H=140,pl=30,pr=6,pt=8,pb=18,hist=S.hist||[],off=hist.length>0?hist.length-1:0,N=off+73;
+  const base=S.base||[];
+  const vals=[...hist,S.now,...S.forecast,...base];
+  const ymax=Math.max(...vals,65)*1.08;
+  const x=i=>pl+(W-pl-pr)*i/(N-1),y=v=>pt+(H-pt-pb)*(1-v/ymax);
+  const fpts=[S.now,...S.forecast].map((v,j)=>`${x(off+j).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  const hpts=hist.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  let bpts="";if(base.length)bpts=base.map((v,j)=>`${x(off+1+j).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  const th=[60,90,120,250].filter(t=>t<ymax).map(t=>`<line x1="${pl}" x2="${W-pr}" y1="${y(t)}" y2="${y(t)}" stroke="currentColor" stroke-opacity=".18" stroke-dasharray="3 3"/><text x="${pl-4}" y="${y(t)+3}" text-anchor="end">${t}</text>`).join("");
+  const pi=S.forecast.indexOf(Math.max(...S.forecast));
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="PM2.5 history and 72 hour forecast">
+    <g style="color:var(--ink)">${th}</g>
+    <text x="${pl-4}" y="${y(0)+3}" text-anchor="end">0</text>
+    <line x1="${x(off)}" x2="${x(off)}" y1="${pt}" y2="${H-pb}" stroke="currentColor" stroke-opacity=".35" style="color:var(--ink)"/>
+    ${hpts?`<polyline points="${hpts}" fill="none" stroke="#8a929c" stroke-width="2"/>`:""}
+    ${bpts?`<polyline points="${bpts}" fill="none" stroke="#8a929c" stroke-width="1.5" stroke-dasharray="4 3"/>`:""}
+    <polyline points="${fpts}" fill="none" stroke="var(--accent)" stroke-width="2.4"/>
+    <circle cx="${x(off+1+pi)}" cy="${y(S.forecast[pi])}" r="4" fill="${CATS[catIdx(S.forecast[pi])][1]}" stroke="#fff" stroke-width="1.5"/>
+    <text x="${x(off)}" y="${H-4}" text-anchor="middle">now</text>
+    ${hist.length?`<text x="${pl}" y="${H-4}">−24h</text>`:""}<text x="${W-pr}" y="${H-4}" text-anchor="end">+72h</text>
+  </svg>`;
+}
+
+function renderStation(){
+  const S=getSel(state.sel);
+  const order=Object.entries(S.shares).sort((a,b)=>b[1]-a[1]);
+  const srcLabel={cams_model:"coarse model data",openaq_sensor:"ground sensor",synthetic:"synthetic"}[S.src]||"";
+  $("#tab-station").innerHTML=`
+   <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+     <button class="pill" id="cityBtn">City-wide</button><span class="note" style="align-self:center">or click a station on the map</span></div>
+   <h2>${esc(S.name)}${S.kind!=="city"?`<span class="chip">${esc(S.kind)}</span>`:""}${srcLabel?`<span class="chip">${srcLabel}</span>`:""}</h2>
+   <div class="big">
+     <div><div class="n">${Math.round(S.now)}</div><div class="u">µg/m³ PM2.5 now</div></div>
+     <div>${catChip(S.now)}</div>
+     <div style="margin-left:auto;text-align:right"><div class="n" style="font-size:22px">${Math.round(S.peak.pm25)}</div><div class="u">peak · ${esc(S.peak.time.slice(5))}</div></div>
+   </div>
+   ${spark(S)}
+   <div class="note">Line: observed (grey) and forecast (blue)${S.base?"; dashed grey = raw CAMS model forecast":""}. Dotted guides are category limits (60/90/120/250).</div>
+   <h3>Where is it coming from? <span style="text-transform:none;font-weight:400">(indicative)</span></h3>
+   <div class="bars">${order.map(([k,v])=>`<div class="row"><span>${esc(D.meta.source_labels[k])}</span><div class="bar"><i style="width:${v}%;background:${SRC_COL[k]}"></i></div><span style="text-align:right">${v.toFixed(0)}%</span></div>`).join("")}</div>
+   ${S.evidence.length?`<ul class="note">${S.evidence.map(e=>`<li>${esc(e)}</li>`).join("")}</ul>`:""}
+   <p class="note">Shares come from transparent rules on wind, fire counts, NO₂ and the PM2.5/PM10 ratio — not chemical source apportionment.</p>`;
+  $("#cityBtn").onclick=()=>select("city");
+}
+
+function renderAct(){
+  const R=D.recommendations,E=D.exposure_summary;
+  const rows=HOURS.map(h=>`<tr><td>${h===0?"Now":"+"+h+" h"}</td><td>${E[h].pop_weighted_pm25}</td><td>${(E[h].pop_poor_or_worse/1e6).toFixed(1)} M</td></tr>`).join("");
+  $("#tab-act").innerHTML=`
+   <h2 style="font-size:16px;line-height:1.35">${esc(R.headline)}</h2>
+   <h3>Exposure</h3>
+   <table><tr><th>When</th><th>Pop-weighted PM2.5</th><th>People in Poor+</th></tr>${rows}</table>
+   <p class="note">Population is a placeholder surface until real raster data (WorldPop/GHSL) is plugged in.</p>
+   ${R.hotspots&&R.hotspots.length?`<h3>Hotspots to watch</h3><ul>${R.hotspots.map(h=>`<li>${esc(h)}</li>`).join("")}</ul>`:""}
+   <h3>For citizens</h3><ul>${R.citizens.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>
+   <h3>For authorities</h3><ul>${R.authorities.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>
+   <p class="note">${esc(R.disclaimer)}</p>`;
+}
+
+function simCalc(){
+  const S=getSel(state.simTarget),ctrl=D.simulation.controllable;
+  let frac=0;for(const k in S.shares)frac+=S.shares[k]/100*(state.cuts[k]||0)*ctrl[k];
+  const before=S.peak.pm25,after=before*(1-frac);
+  return{S,frac,before,after};
+}
+function renderSim(){
+  const sim=D.simulation,keys=Object.keys(sim.controllable);
+  const opts=[["city","Delhi (population-weighted)"],...D.stations.map(s=>[s.id,s.name])];
+  $("#tab-sim").innerHTML=`
+   <h2 style="font-size:16px">What if we cut emissions?</h2>
+   <p class="note">Pick a scenario or drag the sliders. Estimates the change in the <b>forecast peak</b>.</p>
+   <div>Target: <select id="simTarget">${opts.map(o=>`<option value="${o[0]}" ${o[0]===state.simTarget?"selected":""}>${esc(o[1])}</option>`).join("")}</select></div>
+   <div style="margin:8px 0">${sim.presets.map((p,i)=>`<button class="pill" data-p="${i}">${esc(p.name)}</button>`).join("")}<button class="pill" data-p="-1">Reset</button></div>
+   ${keys.map(k=>`<div class="sl"><span>${esc(sim.source_labels[k])}</span><input type="range" min="0" max="100" step="5" value="${Math.round((state.cuts[k]||0)*100)}" data-k="${k}"><span id="v-${k}">${Math.round((state.cuts[k]||0)*100)}%</span></div>`).join("")}
+   <div class="result" id="simRes"></div>
+   <p class="note">Assumed controllability within 72 h: ${keys.map(k=>`${esc(sim.source_labels[k])} ${Math.round(sim.controllable[k]*100)}%`).join(" · ")}. ${esc(sim.note)}</p>`;
+  $("#simTarget").onchange=e=>{state.simTarget=e.target.value;updateSim()};
+  $("#tab-sim").querySelectorAll("input[type=range]").forEach(r=>r.oninput=e=>{const k=e.target.dataset.k;state.cuts[k]=e.target.value/100;$("#v-"+k).textContent=e.target.value+"%";updateSim()});
+  $("#tab-sim").querySelectorAll("button[data-p]").forEach(b=>b.onclick=()=>{const i=+b.dataset.p;state.cuts=i<0?{}:{...sim.presets[i].cuts};renderSim()});
+  updateSim();
+}
+function updateSim(){
+  const r=simCalc(),c0=CATS[catIdx(r.before)],c1=CATS[catIdx(r.after)];
+  $("#simRes").innerHTML=`<div style="display:flex;gap:14px;align-items:baseline;flex-wrap:wrap">
+    <div><div class="note">Forecast peak</div><div class="n">${Math.round(r.before)}</div></div><div style="font-size:20px">→</div>
+    <div><div class="note">Estimated peak</div><div class="n">${Math.round(r.after)}</div></div>
+    <div style="margin-left:auto"><div class="note">Reduction</div><div class="n">${(r.frac*100).toFixed(1)}%</div></div></div>
+    <div style="margin-top:6px">${catChip(r.before)} → ${catChip(r.after)}${c0[0]===c1[0]?` <span class="note">no category change</span>`:""}</div>`;
+}
+
+function renderAbout(){
+  const m=D.model.metrics;
+  const counts={};Object.values(D.meta.sources).forEach(s=>counts[s]=(counts[s]||0)+1);
+  $("#tab-about").innerHTML=`
+   <h3 style="margin-top:0">Forecast accuracy (held-out last 7 days)</h3>
+   <table><tr><th>Horizon</th><th>Model MAE</th><th>“Same as now” MAE</th><th>Skill</th><th>Model weight</th></tr>
+   ${m.map(r=>`<tr><td>+${r.horizon_h} h</td><td>${r.mae}</td><td>${r.persistence_mae}</td><td>${r.skill_vs_persistence==null?"–":Math.round(r.skill_vs_persistence*100)+"%"}</td><td>${r.model_weight==null?"–":Math.round(r.model_weight*100)+"%"}</td></tr>`).join("")}</table>
+   <p class="note">MAE in µg/m³. Skill = 1 − MAE / persistence MAE. Model weight = how far the forecast follows the model instead of “same as now” (0% = persistence); chosen on the same held-out week, so skill is slightly optimistic. ${D.meta.mode==="synthetic"?"<b>These numbers are on synthetic data and say nothing about real-world accuracy.</b>":"Real 48–72 h skill will be somewhat lower than shown because training used analysed, not forecast, weather."}</p>
+   <h3>Data</h3>
+   <ul class="note"><li>Stations: ${Object.entries(counts).map(([k,v])=>`${v} × ${esc(k)}`).join(", ")}</li>
+   <li>Weather &amp; model air quality: Open-Meteo (CAMS / ECMWF). Ground sensors: OpenAQ. Fires: NASA FIRMS.</li>
+   <li>Model: ${esc(D.model.type)}</li><li>Generated: ${esc(D.meta.generated_at)}</li></ul>
+   <h3>Limitations</h3>
+   <ul class="note"><li>Source attribution is a transparent heuristic, not receptor modelling.</li>
+   <li>The what-if tool is a first-order scenario estimate with stated assumptions, not a dispersion simulation.</li>
+   <li>Exposure uses a placeholder population surface.</li><li>Advisory only — follow official CPCB / CAQM orders.</li></ul>`;
+}
+</script>
+</body>
+</html>

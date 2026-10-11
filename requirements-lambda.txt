@@ -1,0 +1,6 @@
+# Pinned for the Lambda zip (Python 3.12, linux x86_64). Pins keep the bundle under Lambda's 250 MB limit;
+# newer pandas/scipy releases can grow it. boto3 is provided by the Lambda runtime, so it is not listed.
+numpy==2.2.6
+pandas==2.3.2
+scikit-learn==1.7.2
+requests>=2.31
