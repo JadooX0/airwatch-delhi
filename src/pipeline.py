@@ -1,9 +1,4 @@
-"""End-to-end pipeline:  ingest -> features/model -> forecast -> attribution -> exposure ->
-recommendations -> simulator -> one JSON file for the dashboard.
 
-  python src/pipeline.py --mode synthetic --out dashboard/data.json
-  python src/pipeline.py --mode live      --out dashboard/data.json
-"""
 import argparse
 import json
 import sys
