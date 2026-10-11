@@ -1,18 +1,4 @@
-"""72-hour PM2.5 forecast.
 
-Direct multi-horizon gradient boosting: one model per horizon h in HORIZONS, pooled across stations.
-Each model predicts the log-change from the current PM2.5, shrunk towards "same as now" by a per-horizon
-weight picked on the held-out week (weight 0 = pure persistence).
-Features at forecast origin t: current/lagged PM2.5, PM10, NO2, weather, upwind-fire index.
-Features at target time t+h: weather (forecast), wind-direction, hour of day.
-Hourly values between horizons are linearly interpolated.
-
-Honest evaluation: the last 7 days are held out, and every horizon is compared with a
-persistence baseline ("tomorrow = today"). The metrics are exported to the dashboard.
-
-Caveat: at training time the target-hour weather is the model's own analysis, at inference it is a
-weather *forecast*, so real skill at 48-72h will be somewhat lower than the held-out numbers.
-"""
 import numpy as np
 import pandas as pd
 from sklearn.base import clone
