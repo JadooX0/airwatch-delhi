@@ -1,12 +1,4 @@
-"""Data ingestion.
 
-Keyless mode  : Open-Meteo weather + Open-Meteo air-quality (CAMS *model* data, coarse grid).
-Optional keys : OPENAQ_API_KEY -> real ground sensors override the CAMS PM2.5/PM10/NO2.
-                FIRMS_MAP_KEY  -> NASA FIRMS fire detections (stubble burning signal).
-
-Every function degrades gracefully: a failure for one source prints a warning and the
-pipeline carries on with what it has.
-"""
 import io
 import os
 import time
