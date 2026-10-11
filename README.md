@@ -146,7 +146,7 @@ turns AirWatch from a static visualization into an automatically updating enviro
 
 ---
 
-# 🔄 How AirWatch Works
+# How AirWatch Works
 
 ```text
 OpenAQ ───────────────┐
@@ -322,7 +322,7 @@ The pipeline collects available environmental information and generates the data
 
 ---
 
-# 🖥️ Run the Dashboard
+#  Run the Dashboard
 
 ```bash
 python -m http.server 8000 --directory dashboard
