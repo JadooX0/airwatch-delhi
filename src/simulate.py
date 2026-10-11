@@ -3,8 +3,7 @@
 new_pm = pm * (1 - sum_i share_i * cut_i * controllable_i)
 
 This is a first-order SCENARIO ESTIMATE built on (a) the indicative attribution shares and (b) the
-CONTROLLABLE assumptions in config.py. It is not a validated chemical-transport simulation. The
-dashboard applies the same formula in JavaScript for the interactive sliders.
+CONTROLLABLE assumptions in config.py. It is not a validated chemical-transport simulation. 
 """
 from config import CONTROLLABLE, SOURCES, SOURCE_LABELS, aqi_cat, CAT_NAMES
 
