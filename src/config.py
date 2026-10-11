@@ -1,9 +1,4 @@
-"""Shared settings for AirWatch Delhi.
 
-NOTE: station coordinates are approximate (placed by hand). Verify against CPCB / OpenAQ
-location metadata before you rely on them. `pop` is a *relative* population weight used
-only to build a placeholder population surface - replace with WorldPop / GHSL raster data.
-"""
 from dataclasses import dataclass
 
 TZ = "Asia/Kolkata"
