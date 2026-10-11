@@ -1,10 +1,4 @@
-"""INDICATIVE source attribution.
 
-This is a transparent rule-based score, NOT receptor modelling or chemical source apportionment
-(that needs speciation data you will not have in a hackathon). Each source gets a score from
-observable signals; scores are normalised to shares. Say "indicative" in the demo and show the
-evidence strings - judges will respect that more than a claimed-exact breakdown.
-"""
 import numpy as np
 
 from config import FIRE_BEARING, FIRE_SATURATION, SOURCE_LABELS, SOURCES
