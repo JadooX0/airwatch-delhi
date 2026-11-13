@@ -2,6 +2,8 @@
 
 ### From air-quality data to environmental action.
 
+deployed link- https://share.google/4NpMAjkgiJ6DEKAo4
+
 > **Track:** Air
 > **Built with:** AWS Lambda · Amazon S3 · Amazon EventBridge · Python · Leaflet · NASA FIRMS · Open-Meteo/CAMS · OpenAQ
 
